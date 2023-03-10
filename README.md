@@ -1,7 +1,9 @@
-<big><h1 align="center">vue-async-computed (fork)</h1></big>
+<big><h1 align="center">vue-async-computed</h1></big>
 
 ### 说明
-此仓库为 vue-async-computed 的一个分支，主要增加一个 Promise 模式，修改了属性计算过程的默认值，其它与原插件完全相同，async computed 属性如果在计算过程中，且未定义任何 default 属性，则默认将异步属性设置为返回 async computed 属性 get 方法返回值的 Promise 实例，借此可快捷简单的进行异步编程。
+此仓库为 [vue-async-computed](https://github.com/foxbenjaminfox/vue-async-computed) 的一个分支，主要增加一个 Promise 模式，修改了属性计算过程的默认值，其它与原插件完全相同，async computed 属性如果在计算过程中，且未定义任何 `default` 属性，则会将属性值设置为 `resolve` async computed 属性 `get` 方法返回值的 Promise 实例，借此可快捷简单的进行异步编程。
+
+如果计算过程中参数错误，上述 Promise 实例会 `reject` 一个错误，若定义了全局的`errorHandler`，则会 `resolve` `errorHandler` 的返回值。
 
 示例：
 
