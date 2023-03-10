@@ -9,10 +9,30 @@
 
 ```js
 new Vue({
+  template: `
+    <div v-if="usernameReady">{{ username }}</div>
+  `,
   data: {
     userId: 1
   },
   computed: {
+    /* 
+    为应对 asyncComputed 异步计算属性默认返回 Promise 而无法在模版中使用 await 
+    关键字，本插件提供全局实例方法 $checkAscPropsStatus，检测异步属性是否处于指
+    定状态。这比直接对异步计算属性设置默认值为 false|null|undefined 然后使用
+    v-if 判断异步计算属性要灵活得多。
+    $checkAscPropsStatus 的前缀可以通过插件全局参数 
+    checkAscPropsStatusPrefix 重新指定，默认为 '$'。
+    Vue.use(AsyncComputed, { checkAscPropsStatusPrefix: '$' })
+     */
+    usernameReady() {
+      return this.$checkAscPropsStatus('username', 'success')
+    },
+    usernamePasswordReady() {
+      return this.$checkAscPropsStatus(['username', 'password'], 'success')
+    }
+  },
+  asyncComputed: {
     username () {
       // Using vue-resource
       return Vue.http.get('/get-username-by-id/' + this.userId)
@@ -35,20 +55,44 @@ new Vue({
       return result
     },
     email:{
-      default: null, // 手动设置默认值后，异步计算属性在初始化时会使用 default 设置的默认值，而非 Promise.
+      /* 
+      手动设置默认值后，异步计算属性在初始化时会使用 default 设置的默认值，
+      而非 Promise. 
+      */
+      default: null,
       async get() {
         /* expression */
       }
+    },
+    timeout: {
+      get() {
+        /* 
+        此属性会抛出一个异常，因为处理的时间超过了指定的超时时间。添加此超时机制
+        是为了防止产生被遗忘的 Promise，如果一个 Promise 一直没有 resolve，将
+        会产生内存泄露风险。 
+        */
+        return new Promise(resolve => { setTimeout(() => resolve() ,6001) })
+      },
+      /* 
+      默认为 6000，单位毫秒，必须为大于 0 的数字。
+      可以使用 Vue.use(AsyncComputed, { timeout: 6000 }) 重新指定全局超时时间。
+      */
+      timeout: 6000 
     }
   },
   watch: {
     password(newVal) {
-      // 异步计算属性如果发生重新计算，在重新计算的过程中，异步计算属性会被修改为一个新 Promise 实例，并 resolve 新的计算结果，而非原插件的‘旧值’。计算完成后，异步计算属性会被再次替换为计算结果。
+      /* 
+      异步计算属性如果发生重新计算，在重新计算的过程中，异步计算属性会被修改为一
+      个新 Promise 实例，并 resolve 新的计算结果，而非原插件的‘旧值’。计算完成
+      后，异步计算属性会被再次替换为计算结果。 
+      */
       newVal instanceof Promise // 在更新属性时为 true，更新完成后为 false
     }
   },
   async created() {
-    console.log(await this.username, await this.password); // 直接打印 username、password 的异步结果
+    // 直接打印 username、password 的异步结果
+    console.log(await this.username, await this.password); 
   }
 })
 ```

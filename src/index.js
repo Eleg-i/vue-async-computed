@@ -1,5 +1,5 @@
+import { checkAscPropsStatus, getterOnly, hasOwnProperty, setAsyncState, validOpt } from './util'
 import { getGetterWithShouldUpdate, shouldNotUpdate } from './shouldUpdate'
-import { getterOnly, hasOwnProperty, setAsyncState, validOpt } from './util'
 import { initLazy, isComputedLazy, isLazyActive, makeLazyComputed, silentGetLazy, silentSetLazy } from './lazy'
 import { errorHandler } from './error'
 import { generateDefault } from './default'
@@ -11,6 +11,10 @@ const prefix = '_async_computed$',
           Vue.config.optionMergeStrategies.asyncComputed = Vue.config.optionMergeStrategies.computed
 
           Vue.mixin(getAsyncComputedMixin(pluginOptions))
+
+          const { checkAscPropsStatusPrefix = '$' } = pluginOptions
+
+          Vue.prototype[`${checkAscPropsStatusPrefix}checkAscPropsStatus`] = checkAscPropsStatus
         }
       }
 

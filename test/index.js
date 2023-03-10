@@ -1,5 +1,5 @@
-import Vue from 'vue'
 import AsyncComputed from '../src'
+import Vue from 'vue'
 import test from 'tape'
 
 const baseErrorCallback = () => {
@@ -65,6 +65,78 @@ test('Async computed values are computed', t => {
       t.equal(await vm.c, 'done1337xx', 'c 应该为 done1337xx')
       t.equal(await vm.d, 'done1337xxd', 'c 应该为 done1337xxd')
     })
+  })()
+})
+
+test('checkPropsStatus 工作正常', t => {
+  t.plan(4)
+  const vm = new Vue({
+    data() {
+      return {
+        x: 1
+      }
+    },
+    computed: {
+      ready() {
+        return this.$checkAscPropsStatus('a', 'success')
+      }
+    },
+    asyncComputed: {
+      a() {
+        return Promise.resolve(this.x)
+      }
+    }
+  })
+
+  t.equal(vm.ready, false, 'ready 应为 false')
+
+  let count = 1
+
+  vm.$watch('ready', val => {
+    if (count === 1) {
+      t.equal(val, true, 'ready 应为 true')
+      vm.x++
+    } else if (count === 2) {
+      t.equal(val, false, 'ready 应为 false')
+    } else t.equal(val, true, 'ready 应为 true')
+
+    count++
+  })
+})
+
+test('timeout 机制工作正常', t => {
+  t.plan(3)
+  pluginOptions.timeout = 2000
+
+  const vm = new Vue({
+    asyncComputed: {
+      a() {
+        return new Promise(resolve => setTimeout(() => resolve('timeout'), 6001))
+      },
+      b: {
+        async get() {
+          await this.a
+        },
+        timeout: 1000
+      }
+    }
+  })
+
+  t.equal(vm.a instanceof Promise, true, 'a 应为 Promise')
+  ;(async () => {
+    try {
+      try {
+        await vm.b
+      } catch (e1) {
+        t.equal(e1, 'asyncComputed 属性 “b” 异步执行栈超时1秒！', 'error.message 时间应为1秒')
+      }
+
+      await vm.a
+    } catch (e) {
+      t.equal(e, 'asyncComputed 属性 “a” 异步执行栈超时2秒！', 'error.message 时间应为2秒')
+    }
+
+    delete pluginOptions.timeout
   })()
 })
 

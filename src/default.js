@@ -33,7 +33,7 @@ export function generateDefault(fn, pluginOptions, prefix) {
 
 /** */
 export function getDefaultPromise({ prefix, fn, pluginOptions }) {
-  const { key, timeout = defaultTimeout } = fn
+  const { key, timeout = pluginOptions.timeout || defaultTimeout } = fn
 
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
