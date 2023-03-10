@@ -1,78 +1,67 @@
-import {
-  initLazy,
-  isComputedLazy,
-  isLazyActive,
-  makeLazyComputed,
-  silentGetLazy,
-  silentSetLazy,
-} from './lazy'
-import {
-  getterOnly,
-  hasOwnProperty,
-  setAsyncState,
-} from './util'
+import { getGetterWithShouldUpdate, shouldNotUpdate } from './shouldUpdate'
+import { getterOnly, hasOwnProperty, setAsyncState, validOpt } from './util'
+import { initLazy, isComputedLazy, isLazyActive, makeLazyComputed, silentGetLazy, silentSetLazy } from './lazy'
+import { errorHandler } from './error'
+import { generateDefault } from './default'
 import { getWatchedGetter } from './watch'
-import {
-  getGetterWithShouldUpdate,
-  shouldNotUpdate,
-} from './shouldUpdate'
 
-const prefix = '_async_computed$'
+const prefix = '_async_computed$',
+      AsyncComputed = {
+        install(Vue, pluginOptions) {
+          Vue.config.optionMergeStrategies.asyncComputed = Vue.config.optionMergeStrategies.computed
 
-const AsyncComputed = {
-  install (Vue, pluginOptions) {
-    Vue.config
-      .optionMergeStrategies
-      .asyncComputed = Vue.config.optionMergeStrategies.computed
+          Vue.mixin(getAsyncComputedMixin(pluginOptions))
+        }
+      }
 
-    Vue.mixin(getAsyncComputedMixin(pluginOptions))
-  }
-}
-
-function getAsyncComputedMixin (pluginOptions = {}) {
+/** */
+function getAsyncComputedMixin(pluginOptions = {}) {
   return {
-    data () {
+    data() {
       return {
-        _asyncComputed: {},
+        _asyncComputed: {}
       }
     },
     computed: {
-      $asyncComputed () {
+      $asyncComputed() {
         return this.$data._asyncComputed
       }
     },
-    beforeCreate () {
+    beforeCreate() {
       const asyncComputed = this.$options.asyncComputed || {}
 
       if (!Object.keys(asyncComputed).length) return
 
       for (const key in asyncComputed) {
         const getter = getterFn(key, asyncComputed[key])
+
         this.$options.computed[prefix + key] = getter
       }
 
       this.$options.data = initDataWithAsyncComputed(this.$options, pluginOptions)
     },
-    created () {
+    created() {
       for (const key in this.$options.asyncComputed || {}) {
-        const item = this.$options.asyncComputed[key],
-              value = generateDefault.call(this, item, pluginOptions)
-        if (isComputedLazy(item)) {
-          silentSetLazy(this, key, value)
-        } else {
-          this[key] = value
-        }
-      }
+        const item = this.$options.asyncComputed[key]
 
-      for (const key in this.$options.asyncComputed || {}) {
+        if (/^(_|$)/.test(key)) {
+          if (isComputedLazy(item)) {
+            silentSetLazy(this, key, silentGetLazy(this, key))
+          } else {
+            this[key] = this.$data[key]
+          }
+        }
+
         handleAsyncComputedPropetyChanges(this, key, pluginOptions)
       }
     }
   }
 }
+
 const AsyncComputedMixin = getAsyncComputedMixin()
 
-function handleAsyncComputedPropetyChanges (vm, key, pluginOptions) {
+/** */
+function handleAsyncComputedPropetyChanges(vm, key, pluginOptions) {
   let promiseId = 0
   const watcher = newPromise => {
     const thisPromise = ++promiseId
@@ -82,30 +71,32 @@ function handleAsyncComputedPropetyChanges (vm, key, pluginOptions) {
     if (!newPromise || !newPromise.then) {
       newPromise = Promise.resolve(newPromise)
     }
+
+    if (['success', 'error'].includes(vm.$data._asyncComputed[key].state)) vm[key] = newPromise
+    // 此处添加 vm[key] = newPromise 效果与设置 default 一致，但会导致 watch 异步计算属性时首次 watch 会被执行两次（即触发两次 update）
+    // if (!(pluginOptions.hasOwnProperty('default') || vm.$options.asyncComputed[key].hasOwnProperty('default'))) vm[key] = newPromise
+
     setAsyncState(vm, key, 'updating')
 
-    newPromise.then(value => {
-      if (thisPromise !== promiseId) return
-      setAsyncState(vm, key, 'success')
-      vm[key] = value
-    }).catch(err => {
-      if (thisPromise !== promiseId) return
+    newPromise
+      .then(value => {
+        if (thisPromise !== promiseId) return
+        setAsyncState(vm, key, 'success')
+        vm[key] = value
+      })
+      .catch(err => {
+        if (thisPromise !== promiseId) return
 
-      setAsyncState(vm, key, 'error')
-      vm.$set(vm.$data._asyncComputed[key], 'exception', err)
-      if (pluginOptions.errorHandler === false) return
-
-      const handler = (pluginOptions.errorHandler === undefined)
-        ? console.error.bind(console, 'Error evaluating async computed property:')
-        : pluginOptions.errorHandler
-
-      if (pluginOptions.useRawError) {
-        handler(err, vm, err.stack)
-      } else {
-        handler(err.stack)
-      }
-    })
+        if (vm.$options.asyncComputed[key].hasOwnProperty('default')) {
+          try {
+            errorHandler({ vm, key, pluginOptions, err })
+          } catch (e) {
+            console.error(e)
+          }
+        }
+      })
   }
+
   vm.$set(vm.$data._asyncComputed, key, {
     exception: null,
     update: () => {
@@ -118,30 +109,37 @@ function handleAsyncComputedPropetyChanges (vm, key, pluginOptions) {
   vm.$watch(prefix + key, watcher, { immediate: true })
 }
 
-function initDataWithAsyncComputed (options, pluginOptions) {
-  const optionData = options.data
-  const asyncComputed = options.asyncComputed || {}
+/** */
+function initDataWithAsyncComputed(options, pluginOptions) {
+  const { data: optionData, computed } = options,
+        asyncComputed = options.asyncComputed || {}
 
-  return function vueAsyncComputedInjectedDataFn (vm) {
-    const data = ((typeof optionData === 'function')
-      ? optionData.call(this, vm)
-      : optionData) || {}
+  return function vueAsyncComputedInjectedDataFn(vm) {
+    const data = (typeof optionData === 'function' ? optionData.call(this, vm) : optionData) || {}
+
+    validOpt({ computed, data, asyncComputed })
+
     for (const key in asyncComputed) {
       const item = this.$options.asyncComputed[key]
 
-      var value = generateDefault.call(this, item, pluginOptions)
+      item.key = key
+
+      const value = generateDefault.call(this, item, pluginOptions, prefix)
+
       if (isComputedLazy(item)) {
-        initLazy(data, key, value)
+        initLazy.call(this, data, key, value)
         this.$options.computed[key] = makeLazyComputed(key)
       } else {
         data[key] = value
       }
     }
+
     return data
   }
 }
 
-function getterFn (key, fn) {
+/** */
+function getterFn(key, fn) {
   if (typeof fn === 'function') return fn
 
   let getter = fn.get
@@ -156,7 +154,8 @@ function getterFn (key, fn) {
 
   if (isComputedLazy(fn)) {
     const nonLazy = getter
-    getter = function lazyGetter () {
+
+    getter = function lazyGetter() {
       if (isLazyActive(this, key)) {
         return nonLazy.call(this)
       } else {
@@ -164,23 +163,8 @@ function getterFn (key, fn) {
       }
     }
   }
+
   return getter
-}
-
-function generateDefault (fn, pluginOptions) {
-  let defaultValue = null
-
-  if ('default' in fn) {
-    defaultValue = fn.default
-  } else if ('default' in pluginOptions) {
-    defaultValue = pluginOptions.default
-  }
-
-  if (typeof defaultValue === 'function') {
-    return defaultValue.call(this)
-  } else {
-    return defaultValue
-  }
 }
 
 export default AsyncComputed

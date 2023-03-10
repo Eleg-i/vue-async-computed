@@ -1,7 +1,7 @@
 {
-  "name": "vue-async-computed",
-  "version": "3.9.0",
-  "description": "Async computed properties for Vue",
+  "name": "@cailiao/vue-async-computed",
+  "version": "4.0.0",
+  "description": "Async computed properties for Vue, A fork of vue-async-computed",
   "main": "dist/vue-async-computed.js",
   "module": "dist/vue-async-computed.esm.js",
   "types": "types/index.d.ts",
@@ -12,10 +12,10 @@
   ],
   "scripts": {
     "clean": "rimraf dist",
-    "lint": "eslint src test",
+    "lint": "eslint src",
     "watch": "watch 'npm run build' src test",
     "test": "babel-node --presets env test/index.js | tspec",
-    "prebuild": "npm run lint -s && npm run clean -s && mkdirp dist",
+    "prebuild": "npm run clean -s && mkdirp dist",
     "build": "npm run rollup -s && npm run babel -s",
     "rollup-esm": "rollup src/index.js --output.format esm --name AsyncComputed --output.file dist/vue-async-computed.esm.esnext.js",
     "rollup-umd": "rollup src/index.js --output.format umd --name AsyncComputed --output.file dist/vue-async-computed.esnext.js",
@@ -33,7 +33,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/foxbenjaminfox/vue-async-computed.git"
+    "url": "git+https://github.com/Eleg-i/vue-async-computed.git"
   },
   "keywords": [
     "vue",
@@ -42,34 +42,41 @@
     "computed",
     "computed data"
   ],
-  "author": "Benjamin Fox <foxbenjaminfox@gmail.com>",
+  "author": "cailiao",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/foxbenjaminfox/vue-async-computed/issues"
+    "url": "https://github.com/Eleg-i/vue-async-computed/issues"
   },
-  "homepage": "https://github.com/foxbenjaminfox/vue-async-computed#readme",
+  "homepage": "https://github.com/Eleg-i/vue-async-computed/#readme",
   "peerDependencies": {
     "vue": "~2"
   },
   "devDependencies": {
+    "@babel/core": "^7.17.9",
+    "@babel/eslint-parser": "^7.17.0",
+    "@cailiao/eslint-plugin-prettier": "^0.2.8",
     "babel-cli": "^6.26.0",
-    "babel-core": "^6.26.3",
-    "babel-eslint": "^10.1.0",
+    "babel-helper-vue-jsx-merge-props": "^2.0.3",
+    "babel-plugin-component": "^1.1.1",
+    "babel-plugin-import": "^1.13.3",
+    "babel-plugin-transform-remove-console": "^6.9.4",
     "babel-preset-env": "^1.7.0",
     "doctoc": "^1.4.0",
-    "eslint": "^7.7.0",
-    "eslint-config-standard": "^14.1.1",
-    "eslint-plugin-import": "^2.22.0",
-    "eslint-plugin-node": "^11.1.0",
-    "eslint-plugin-promise": "^4.2.1",
-    "eslint-plugin-standard": "^4.0.1",
+    "eslint": "^8.14.0",
+    "eslint-config-standard": "^15.0.1",
+    "eslint-plugin-html": "^6.2.0",
+    "eslint-plugin-jsx": "^0.1.0",
+    "eslint-plugin-promise": "^6.0.0",
+    "eslint-plugin-vue": "^8.7.0",
     "estraverse-fb": "^1.3.2",
     "mkdirp": "^1.0.4",
+    "prettier": "^2.8.4",
     "rimraf": "^3.0.2",
     "rollup": "^2.26.3",
     "tap-spec": "^5.0.0",
     "tape": "^5.0.1",
-    "vue": "^2.5.21",
+    "vue": "^2.7.14",
+    "vue-eslint-parser": "^8.3.0",
     "watch": "^1.0.2"
   }
 }

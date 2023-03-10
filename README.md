@@ -1,26 +1,57 @@
-<big><h1 align="center">vue-async-computed</h1></big>
+<big><h1 align="center">vue-async-computed (fork)</h1></big>
 
-<p align="center">
-  <a href="https://npmjs.org/package/vue-async-computed">
-    <img src="https://img.shields.io/npm/v/vue-async-computed.svg?style=flat-square"
-         alt="NPM Version">
-  </a>
+### 说明
+此仓库为 vue-async-computed 的一个分支，主要增加一个 Promise 模式，修改了属性计算过程的默认值，其它与原插件完全相同，async computed 属性如果在计算过程中，且未定义任何 default 属性，则默认将异步属性设置为返回 async computed 属性 get 方法返回值的 Promise 实例，借此可快捷简单的进行异步编程。
 
-  <a href="https://travis-ci.org/foxbenjaminfox/vue-async-computed">
-    <img src="https://img.shields.io/travis/foxbenjaminfox/vue-async-computed.svg?style=flat-square"
-         alt="Build Status">
-  </a>
+示例：
 
-  <a href="https://npmjs.org/package/vue-async-computed">
-    <img src="https://img.shields.io/npm/dm/vue-async-computed.svg?style=flat-square"
-         alt="Downloads">
-  </a>
+```js
+new Vue({
+  data: {
+    userId: 1
+  },
+  computed: {
+    username () {
+      // Using vue-resource
+      return Vue.http.get('/get-username-by-id/' + this.userId)
+        // This assumes that this endpoint will send us a response
+        // that contains something like this:
+        // {
+        //   "username": "username-goes-here"
+        // }
+        .then(response => response.data.username)
+    }，
+    async password() {
+      var result
+      const username = await this.username // 对异步计算属性进行依赖计算，依赖属性计算完成后继续往下执行，无需繁琐判断和监听，但需要注意避免循环依赖。
 
-  <a href="https://github.com/foxbenjaminfox/vue-async-computed/blob/master/LICENSE">
-    <img src="https://img.shields.io/npm/l/vue-async-computed.svg?style=flat-square"
-         alt="License">
-  </a>
-</p>
+      /** 一些异步操作 **/ 
+      const repsonse = await fetch(`/api?username=${username}`)
+
+      result = repsonse.data.password
+
+      return result
+    },
+    email:{
+      default: null, // 手动设置默认值后，异步计算属性在初始化时会使用 default 设置的默认值，而非 Promise.
+      async get() {
+        /* expression */
+      }
+    }
+  },
+  watch: {
+    password(newVal) {
+      // 异步计算属性如果发生重新计算，在重新计算的过程中，异步计算属性会被修改为一个新 Promise 实例，并 resolve 新的计算结果，而非原插件的‘旧值’。计算完成后，异步计算属性会被再次替换为计算结果。
+      newVal instanceof Promise // 在更新属性时为 true，更新完成后为 false
+    }
+  },
+  async created() {
+    console.log(await this.username, await this.password); // 直接打印 username、password 的异步结果
+  }
+})
+```
+
+### 以下为原插件部分文档
 
 With this plugin, you can have computed properties in Vue that are computed asynchronously.
 
@@ -43,7 +74,7 @@ new Vue({
         .then(response => response.data.username)
     }
   }
-}
+})
 ```
 
 Or rather, you could, but it wouldn't do what you'd want it to do. But using this plugin, it works just like you'd expect:
@@ -227,6 +258,7 @@ without any of its (local) dependencies changing, such as for instance the data 
 You can set up a `watch` property, listing the additional dependencies to watch.
 Your async computed property will then be recalculated also if any of the watched
 dependencies change, in addition to the real dependencies the property itself has:
+
 ```js
 
 new Vue({
@@ -248,6 +280,7 @@ new Vue({
   }
 }
 ```
+
 Just like with Vue's normal `watch`, you can use a dotted path in order to watch a nested property. For example, `watch: ['a.b.c', 'd.e']` would declare a dependancy on `this.a.b.c` and on `this.d.e`.
 
 You can trigger re-computation of an async computed property manually, e.g. to re-try if an error occured during evaluation. This should be avoided if you are able to achieve the same result using a watched property.
@@ -313,6 +346,7 @@ With async computed properties, you sometimes don't want that. With `lazy: true`
 property will only be computed the first time it's accessed.
 
 For example:
+
 ```js
 new Vue({
   data: {
