@@ -2,6 +2,7 @@
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 # Changelog
 
+- [v4.0.2](#v402)
 - [v4.0.1](#v401)
 - [v4.0.0](#v400)
 - [v3.9.0](#v390)
@@ -31,6 +32,10 @@
 - [v1.0.0](#v100)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
+### v4.0.2
+
+- 修复未传递插件全局配置参数时的错误。
+
 ### v4.0.1
 
 - 新增超时机制和实例的异步计算属性状态检查方法 $checkAscPropsStatus。

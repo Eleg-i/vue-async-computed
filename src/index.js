@@ -7,7 +7,7 @@ import { getWatchedGetter } from './watch'
 
 const prefix = '_async_computed$',
       AsyncComputed = {
-        install(Vue, pluginOptions) {
+        install(Vue, pluginOptions = {}) {
           Vue.config.optionMergeStrategies.asyncComputed = Vue.config.optionMergeStrategies.computed
 
           Vue.mixin(getAsyncComputedMixin(pluginOptions))
@@ -19,7 +19,7 @@ const prefix = '_async_computed$',
       }
 
 /** */
-function getAsyncComputedMixin(pluginOptions = {}) {
+function getAsyncComputedMixin(pluginOptions) {
   return {
     data() {
       return {
