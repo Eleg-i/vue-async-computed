@@ -12,11 +12,12 @@ export function errorHandler({ vm, key, pluginOptions, err }) {
         err.message = 'Error evaluating async computed property:' + err.message
         throw err
       }
-      : pluginOptions.errorHandler
+      : pluginOptions.errorHandler,
+      stack = err instanceof Error ? err.stack : err
 
   if (pluginOptions.useRawError) {
-    return handler(err, vm, err.stack)
+    return handler(err, vm, stack)
   } else {
-    return handler(err.stack)
+    return handler(stack)
   }
 }

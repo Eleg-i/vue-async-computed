@@ -53,7 +53,7 @@ function warn(type, key) {
  * @param {Enum<String>} status 指定的状态，枚举类型，要求是 'updating', 'success', 'error'，三者之一
  * @return {Boolean} 是否符合指定状态，是为true，否则为false
  */
-export function checkAscPropsStatus(props, status) {
+export function checkAscPropsStatus(props, status = 'success') {
   var innerProps
 
   if (typeof props === 'string') {

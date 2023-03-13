@@ -26,10 +26,14 @@ new Vue({
     Vue.use(AsyncComputed, { checkAscPropsStatusPrefix: '$' })
      */
     usernameReady() {
-      return this.$checkAscPropsStatus('username', 'success')
+      return this.$checkAscPropsStatus('username', 'success') 
+      // 等价于 this.$checkAscPropsStatus('username')，'success' 可省略
     },
-    usernamePasswordReady() {
-      return this.$checkAscPropsStatus(['username', 'password'], 'success')
+    usernamePasswordUpdating() {
+      return this.$checkAscPropsStatus(['username', 'password'], 'updating') // 'updating' 不可省略
+    }，
+    emailError() {
+      return this.$checkAscPropsStatus(['email'], 'error') // 'error' 不可省略
     }
   },
   asyncComputed: {

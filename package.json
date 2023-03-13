@@ -1,6 +1,6 @@
 {
   "name": "@cailiao/vue-async-computed",
-  "version": "4.0.2",
+  "version": "4.0.3",
   "description": "Async computed properties for Vue, A fork of vue-async-computed",
   "main": "dist/vue-async-computed.js",
   "module": "dist/vue-async-computed.esm.js",

@@ -33,12 +33,16 @@ export function generateDefault(fn, pluginOptions, prefix) {
 
 /** */
 export function getDefaultPromise({ prefix, fn, pluginOptions }) {
-  const { key, timeout = pluginOptions.timeout || defaultTimeout } = fn
+  const { key, timeout = pluginOptions.timeout || defaultTimeout } = fn  
 
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
       reject(`asyncComputed 属性 “${key}” 异步执行栈超时${timeout / 1000}秒！`)
-    }, timeout)
+    }, timeout),
+          finish = () => {
+            clearTimeout(timer)
+            this.$data._asyncComputed[key].inDefaultPromise = false
+          }
 
     /** */
     function handleError(err, vm) {
@@ -50,6 +54,8 @@ export function getDefaultPromise({ prefix, fn, pluginOptions }) {
     }
 
     this.$once('hook:created', async () => {
+      this.$data._asyncComputed[key].inDefaultPromise = true
+
       if (isComputedLazy(fn)) {
         const unWatch = this.$watch(`${lazyActivePrefix}${key}`, async newVal => {
           if (newVal) {
@@ -58,7 +64,7 @@ export function getDefaultPromise({ prefix, fn, pluginOptions }) {
             } catch (e) {
               handleError(e, this)
             } finally {
-              clearTimeout(timer)
+              finish()
               unWatch()
             }
           }
@@ -69,7 +75,7 @@ export function getDefaultPromise({ prefix, fn, pluginOptions }) {
         } catch (e) {
           handleError(e, this)
         } finally {
-          clearTimeout(timer)
+          finish()
         }
       }
     })

@@ -2,6 +2,7 @@
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 # Changelog
 
+- [v4.0.3](#v403)
 - [v4.0.2](#v402)
 - [v4.0.1](#v401)
 - [v4.0.0](#v400)
@@ -32,6 +33,10 @@
 - [v1.0.0](#v100)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
+### v4.0.3
+
+- checkAscPropsStatus 新增参数默认值，默认检查 success 状态，修复 error 状态在 update 周期后未正确设置的问题。
+
 ### v4.0.2
 
 - 修复未传递插件全局配置参数时的错误。

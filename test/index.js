@@ -69,38 +69,69 @@ test('Async computed values are computed', t => {
 })
 
 test('checkPropsStatus 工作正常', t => {
-  t.plan(4)
+  t.plan(12)
   const vm = new Vue({
     data() {
       return {
-        x: 1
+        x: 1,
+        y: 1
       }
     },
     computed: {
       ready() {
         return this.$checkAscPropsStatus('a', 'success')
+      },
+      ready2() {
+        return this.$checkAscPropsStatus('a')
+      },
+      error() {
+        return this.$checkAscPropsStatus('b', 'error')
       }
     },
     asyncComputed: {
       a() {
         return Promise.resolve(this.x)
+      },
+      b() {
+        return Promise.reject(this.y)
       }
     }
   })
 
   t.equal(vm.ready, false, 'ready 应为 false')
+  t.equal(vm.ready2, false, 'ready2 应为 false')
 
   let count = 1
 
   vm.$watch('ready', val => {
     if (count === 1) {
       t.equal(val, true, 'ready 应为 true')
+      t.equal(vm.ready2, true, 'ready2 应为 true')
       vm.x++
     } else if (count === 2) {
       t.equal(val, false, 'ready 应为 false')
-    } else t.equal(val, true, 'ready 应为 true')
+      t.equal(vm.ready2, false, 'ready2 应为 false')
+    } else {
+      t.equal(val, true, 'ready 应为 true')
+      t.equal(vm.ready2, true, 'ready2 应为 true')
+    }
 
     count++
+  })
+
+  t.equal(vm.error, false, 'error 应为 false')
+
+  let count2 = 1
+
+  vm.$watch('error', val => {
+    if (count2 === 1) {
+      t.equal(val, true, 'error 应为 true')
+      vm.y++
+    } else if (count2 === 2) {
+      t.equal(val, false, 'error 应为 false')
+    } else t.equal(val, true, 'error 应为 true')
+
+    count2++
   })
 })
 

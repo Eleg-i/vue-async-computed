@@ -45,6 +45,7 @@ function getAsyncComputedMixin(pluginOptions) {
       this.$options.data = initDataWithAsyncComputed(this.$options, pluginOptions)
     },
     created() {
+      this._created = true
       for (const key in this.$options.asyncComputed || {}) {
         const item = this.$options.asyncComputed[key]
 
@@ -91,7 +92,11 @@ function handleAsyncComputedPropetyChanges(vm, key, pluginOptions) {
       .catch(err => {
         if (thisPromise !== promiseId) return
 
-        if (vm.$options.asyncComputed[key].hasOwnProperty('default')) {
+        // 设置 inDefaultPromise 是为了在 default Promise 执行结束后，顺利捕获后续的错误
+        if (
+          !vm.$data._asyncComputed[key].inDefaultPromise
+           || vm.$options.asyncComputed[key].hasOwnProperty('default')
+        ) {
           try {
             errorHandler({ vm, key, pluginOptions, err })
           } catch (e) {
